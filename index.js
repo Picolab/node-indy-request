@@ -17,16 +17,16 @@ let type = {
   GET_CLAIM_DEF: 108
 }
 
-function IndyReq (host, port, serverKey) {
+function IndyReq (conf) {
   let zsock = zmq.socket('dealer')
 
   let keypair = zmq.zmqCurveKeypair()
   zsock.identity = keypair.public
   zsock.curve_publickey = keypair.public
   zsock.curve_secretkey = keypair.secret
-  zsock.curve_serverkey = serverKey
+  zsock.curve_serverkey = conf.serverKey
   zsock.linger = 0 // TODO set correct timeout
-  zsock.connect('tcp://' + host + ':' + port)
+  zsock.connect('tcp://' + conf.host + ':' + conf.port)
 
   let nextReqId = 1
   let reqs = {}

@@ -1,4 +1,14 @@
+sudo: required
+
 language: node_js
 node_js:
   - "node" # latest / current
   - "lts/*"
+
+services:
+  - docker
+
+before_install:
+  - wget https://raw.githubusercontent.com/hyperledger/indy-sdk/master/ci/indy-pool.dockerfile
+  - docker build -f indy-pool.dockerfile -t indy_pool .
+  - docker run -itd -p 9701-9708:9701-9708 indy_pool
