@@ -18,6 +18,9 @@ let type = {
 }
 
 function IndyReq (conf) {
+  if (typeof conf.timeout !== 'number') {
+    conf.timeout = 1000 * 60
+  }
   let zsock = zmq.socket('dealer')
 
   let keypair = zmq.zmqCurveKeypair()
@@ -83,7 +86,7 @@ function IndyReq (conf) {
 
   let checkTimeouts = setInterval(function () {
     Object.keys(reqs).forEach(function (reqId) {
-      if ((Date.now() - reqs[reqId].sent) > 1000 * 60) {
+      if ((Date.now() - reqs[reqId].sent) > conf.timeout) {
         reqs[reqId].reject(new Error('Timeout'))
         delete reqs[reqId]
       }
