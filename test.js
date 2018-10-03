@@ -25,3 +25,44 @@ test.cb('ping', function (t) {
 
   node.ping()
 })
+
+test.cb('close', function (t) {
+  let node = IndyReq({
+    host: '127.0.0.1',
+    port: 9702,
+    serverKey: SERVERKEY
+  })
+
+  t.plan(2)
+
+  node.on('close', function () {
+    t.pass('close')
+  })
+  node.send({})
+    .catch(function (err) {
+      t.is(err.message, 'Closed')
+      t.end()
+    })
+  node.close()
+})
+
+test('send', async function (t) {
+  let node = IndyReq({
+    host: '127.0.0.1',
+    port: 9702,
+    serverKey: SERVERKEY
+  })
+  node.on('error', t.fail)
+
+  let resp = await node.send({
+    operation: {
+      type: IndyReq.type.GET_TXN + '',
+      ledgerId: 1,
+      data: 9
+    },
+    identifier: 'MSjKTWkPLtYoPEaTF1TUDb',
+    protocolVersion: 2
+  })
+  t.is(resp.op, 'REPLY')
+  t.is(resp.result.seqNo, 9)
+})
