@@ -1,6 +1,8 @@
 let test = require('ava')
 let IndyReq = require('./')
 let bs58 = require('bs58')
+let nacl = require('tweetnacl')
+let serializeForSignature = require('./serializeForSignature')
 
 let SERVERKEY = bs58.decode('HXrfcFWDjWusENBoXhV8mARzq51f1npWYWaA1GzfeMDG')
 
@@ -65,4 +67,90 @@ test('send', async function (t) {
   })
   t.is(resp.op, 'REPLY')
   t.is(resp.result.seqNo, 9)
+
+  node.close()
+})
+
+test('serializeForSignature', async function (t) {
+  t.is(serializeForSignature({
+    name: 'John Doe',
+    age: 43,
+    operation: {
+      hash: 'cool hash',
+      dest: 54
+    },
+    phones: [
+      '1234567',
+      '2345678',
+      { rust: 5, age: 1 },
+      3
+    ]
+  }), 'age:43|name:John Doe|operation:dest:54|hash:46aa0c92129b33ee72ee1478d2ae62fa6e756869dedc6c858af3214a6fcf1904|phones:1234567,2345678,age:1|rust:5,3')
+
+  t.is(serializeForSignature({
+    name: 'John Doe',
+    age: 43,
+    operation: {
+      hash: 'cool hash',
+      dest: 54
+    },
+    fees: 'fees1',
+    signature: 'sign1',
+    signatures: 'sign-m',
+    phones: [
+      '1234567',
+      '2345678',
+      { rust: 5, age: 1 },
+      3
+    ]
+  }), 'age:43|name:John Doe|operation:dest:54|hash:46aa0c92129b33ee72ee1478d2ae62fa6e756869dedc6c858af3214a6fcf1904|phones:1234567,2345678,age:1|rust:5,3')
+
+  t.is(serializeForSignature({
+    name: 'John Doe',
+    age: 43,
+    operation: {
+      hash: 'cool hash',
+      dest: 54,
+      raw: 'string for hash'
+    },
+    phones: [
+      '1234567',
+      '2345678',
+      { rust: 5, age: 1 },
+      3
+    ]
+  }), 'age:43|name:John Doe|operation:dest:54|hash:46aa0c92129b33ee72ee1478d2ae62fa6e756869dedc6c858af3214a6fcf1904|raw:1dcd0759ce38f57049344a6b3c5fc18144fca1724713090c2ceeffa788c02711|phones:1234567,2345678,age:1|rust:5,3')
+
+  t.is(serializeForSignature({ signature: null }), '')
+})
+
+test.only('NYM', async function (t) {
+  let node = IndyReq({
+    host: '127.0.0.1',
+    port: 9702,
+    serverKey: SERVERKEY
+  })
+  node.on('error', function (err) {
+    console.log('>>>>>>>>>>>', err.data.result.txn.metadata.reqId)
+    t.fail('got err')
+    node.close()
+  })
+
+  let my1 = nacl.sign.keyPair.fromSeed(Buffer.from('00000000000000000000000000000My1', 'utf8'))
+  let sender = nacl.sign.keyPair.fromSeed(Buffer.from('000000000000000000000000Trustee1', 'utf8'))
+
+  let resp = await node.send({
+    operation: {
+      type: IndyReq.type.NYM + '',
+      dest: bs58.encode(my1.publicKey.slice(0, 16)),
+      verkey: bs58.encode(my1.publicKey)
+    },
+    identifier: bs58.encode(sender.publicKey.slice(0, 16)),
+    protocolVersion: 2
+  }, sender.secretKey)
+
+  t.is(resp.op, 'REPLY')
+  t.is(resp.result.txn.data.verkey, bs58.encode(my1.publicKey))
+
+  node.close()
 })

@@ -1,5 +1,8 @@
+let bs58 = require('bs58')
+let nacl = require('tweetnacl')
 let zmq = require('zeromq')
 let EventEmitter = require('events')
+let serializeForSignature = require('./serializeForSignature')
 
 let type = {
   NODE: 0,
@@ -63,7 +66,12 @@ function IndyReq (conf) {
           }
           break
         case 'REPLY':
-          reqId = data.result.reqId
+          if (data.result && data.result.txn && data.result.txn.metadata) {
+            reqId = data.result.txn.metadata.reqId
+          } else {
+            reqId = data.result.reqId
+          }
+
           if (reqs[reqId]) {
             reqs[reqId].resolve(data)
             delete reqs[reqId]
@@ -96,9 +104,15 @@ function IndyReq (conf) {
   api.ping = function ping () {
     zsock.send('pi')
   }
-  api.send = function send (data) {
+  api.send = function send (data, signKey) {
     let reqId = nextReqId++
     data.reqId = reqId
+
+    if (signKey) {
+      let serialized = serializeForSignature(data, true)
+      data.signature = bs58.encode(nacl.sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64))
+    }
+
     let p = new Promise(function (resolve, reject) {
       reqs[reqId] = {
         sent: Date.now(),
