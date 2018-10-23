@@ -56,6 +56,7 @@ function IndyReq (conf) {
           }
           break
         case 'REQNACK':
+        case 'REJECT':
           reqId = data.reqId
           err = new Error(data.reason)
           err.data = data

@@ -124,33 +124,176 @@ test('serializeForSignature', async function (t) {
   t.is(serializeForSignature({ signature: null }), '')
 })
 
-test.only('NYM', async function (t) {
+test('NYM + GET_NYM', async function (t) {
   let node = IndyReq({
     host: '127.0.0.1',
     port: 9702,
     serverKey: SERVERKEY
   })
   node.on('error', function (err) {
-    console.log('>>>>>>>>>>>', err.data.result.txn.metadata.reqId)
-    t.fail('got err')
+    t.fail('got error: ' + err)
     node.close()
   })
 
   let my1 = nacl.sign.keyPair.fromSeed(Buffer.from('00000000000000000000000000000My1', 'utf8'))
   let sender = nacl.sign.keyPair.fromSeed(Buffer.from('000000000000000000000000Trustee1', 'utf8'))
 
+  let my1DID = bs58.encode(my1.publicKey.slice(0, 16))
+  let my1Verkey = bs58.encode(my1.publicKey)
+  let senderDID = bs58.encode(sender.publicKey.slice(0, 16))
+
   let resp = await node.send({
     operation: {
       type: IndyReq.type.NYM + '',
-      dest: bs58.encode(my1.publicKey.slice(0, 16)),
-      verkey: bs58.encode(my1.publicKey)
+      dest: my1DID,
+      verkey: my1Verkey
     },
-    identifier: bs58.encode(sender.publicKey.slice(0, 16)),
+    identifier: senderDID,
     protocolVersion: 2
   }, sender.secretKey)
 
   t.is(resp.op, 'REPLY')
-  t.is(resp.result.txn.data.verkey, bs58.encode(my1.publicKey))
+  t.is(resp.result.txn.data.verkey, my1Verkey)
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.GET_NYM + '',
+      dest: my1DID
+    },
+    identifier: senderDID,
+    protocolVersion: 2
+  })
+
+  t.is(resp.result.dest, my1DID)
+  t.is(JSON.parse(resp.result.data).dest, my1DID)
+  t.is(JSON.parse(resp.result.data).verkey, my1Verkey)
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.ATTRIB + '',
+      dest: my1DID,
+      raw: '{"some":"one"}'
+    },
+    identifier: my1DID,
+    protocolVersion: 2
+  }, my1.secretKey)
+
+  t.is(resp.result.txn.data.raw, '{"some":"one"}')
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.ATTRIB + '',
+      dest: my1DID,
+      raw: '{"another":"thing"}'
+    },
+    identifier: my1DID,
+    protocolVersion: 2
+  }, my1.secretKey)
+
+  t.is(resp.result.txn.data.raw, '{"another":"thing"}')
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.GET_ATTR + '',
+      dest: my1DID,
+      raw: 'some'
+    },
+    identifier: my1DID,
+    protocolVersion: 2
+  })
+
+  t.is(resp.result.data, '{"some":"one"}')
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.GET_ATTR + '',
+      dest: my1DID,
+      raw: 'another'
+    },
+    identifier: my1DID,
+    protocolVersion: 2
+  })
+
+  t.is(resp.result.data, '{"another":"thing"}')
+
+  node.close()
+})
+
+test('ATTRIB + GET_ATTR', async function (t) {
+  let node = IndyReq({
+    host: '127.0.0.1',
+    port: 9702,
+    serverKey: SERVERKEY
+  })
+  node.on('error', function (err) {
+    t.fail('got error: ' + err)
+    node.close()
+  })
+
+  let my1 = nacl.sign.keyPair.fromSeed(Buffer.from('00000000000000000000000000000My1', 'utf8'))
+  let sender = nacl.sign.keyPair.fromSeed(Buffer.from('000000000000000000000000Trustee1', 'utf8'))
+
+  let my1DID = bs58.encode(my1.publicKey.slice(0, 16))
+  let my1Verkey = bs58.encode(my1.publicKey)
+  let senderDID = bs58.encode(sender.publicKey.slice(0, 16))
+
+  let resp = await node.send({
+    operation: {
+      type: IndyReq.type.NYM + '',
+      dest: my1DID,
+      verkey: my1Verkey
+    },
+    identifier: senderDID,
+    protocolVersion: 2
+  }, sender.secretKey)
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.ATTRIB + '',
+      dest: my1DID,
+      raw: '{"some":"one"}'
+    },
+    identifier: my1DID,
+    protocolVersion: 2
+  }, my1.secretKey)
+
+  t.is(resp.result.txn.data.raw, '{"some":"one"}')
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.ATTRIB + '',
+      dest: my1DID,
+      raw: '{"another":"thing"}'
+    },
+    identifier: my1DID,
+    protocolVersion: 2
+  }, my1.secretKey)
+
+  t.is(resp.result.txn.data.raw, '{"another":"thing"}')
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.GET_ATTR + '',
+      dest: my1DID,
+      raw: 'some'
+    },
+    identifier: my1DID,
+    protocolVersion: 2
+  })
+
+  t.is(resp.result.data, '{"some":"one"}')
+
+  resp = await node.send({
+    operation: {
+      type: IndyReq.type.GET_ATTR + '',
+      dest: my1DID,
+      raw: 'another'
+    },
+    identifier: my1DID,
+    protocolVersion: 2
+  })
+
+  t.is(resp.result.data, '{"another":"thing"}')
 
   node.close()
 })
