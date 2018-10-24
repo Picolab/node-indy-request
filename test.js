@@ -124,7 +124,7 @@ test('serializeForSignature', async function (t) {
   t.is(serializeForSignature({ signature: null }), '')
 })
 
-test('NYM + GET_NYM', async function (t) {
+test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
   let node = IndyReq({
     host: '127.0.0.1',
     port: 9702,
@@ -216,28 +216,7 @@ test('NYM + GET_NYM', async function (t) {
 
   t.is(resp.result.data, '{"another":"thing"}')
 
-  node.close()
-})
-
-test('ATTRIB + GET_ATTR', async function (t) {
-  let node = IndyReq({
-    host: '127.0.0.1',
-    port: 9702,
-    serverKey: SERVERKEY
-  })
-  node.on('error', function (err) {
-    t.fail('got error: ' + err)
-    node.close()
-  })
-
-  let my1 = nacl.sign.keyPair.fromSeed(Buffer.from('00000000000000000000000000000My1', 'utf8'))
-  let sender = nacl.sign.keyPair.fromSeed(Buffer.from('000000000000000000000000Trustee1', 'utf8'))
-
-  let my1DID = bs58.encode(my1.publicKey.slice(0, 16))
-  let my1Verkey = bs58.encode(my1.publicKey)
-  let senderDID = bs58.encode(sender.publicKey.slice(0, 16))
-
-  let resp = await node.send({
+  resp = await node.send({
     operation: {
       type: IndyReq.type.NYM + '',
       dest: my1DID,
