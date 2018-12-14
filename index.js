@@ -4,20 +4,27 @@ let zmq = require('zeromq')
 let EventEmitter = require('events')
 let serializeForSignature = require('./serializeForSignature')
 
-let type = {
-  NODE: 0,
-  NYM: 1,
-  ATTRIB: 100,
-  SCHEMA: 101,
-  CLAIM_DEF: 102,
-  POOL_UPGRADE: 109,
-  NODE_UPGRADE: 110,
-  POOL_CONFIG: 111,
-  GET_TXN: 3,
-  GET_ATTR: 104,
-  GET_NYM: 105,
-  GET_SCHEMA: 107,
-  GET_CLAIM_DEF: 108
+const type = {
+  NODE: '0',
+  NYM: '1',
+  ATTRIB: '100',
+  SCHEMA: '101',
+  CRED_DEF: '102',
+  POOL_UPGRADE: '109',
+  NODE_UPGRADE: '110',
+  POOL_CONFIG: '111',
+  GET_TXN: '3',
+  GET_ATTR: '104',
+  GET_NYM: '105',
+  GET_SCHEMA: '107',
+  GET_CLAIM_DEF: '108'
+}
+
+const role = {
+  TRUSTEE: '0',
+  STEWARD: '2',
+  TRUST_ANCHOR: '101',
+  ROLE_REMOVE: ''
 }
 
 function IndyReq (conf) {
@@ -140,3 +147,4 @@ function IndyReq (conf) {
 
 module.exports = IndyReq
 module.exports.type = type
+module.exports.role = role

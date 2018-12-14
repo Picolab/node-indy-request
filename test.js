@@ -58,7 +58,7 @@ test('send', async function (t) {
 
   let resp = await node.send({
     operation: {
-      type: IndyReq.type.GET_TXN + '',
+      type: IndyReq.type.GET_TXN,
       ledgerId: 1,
       data: 9
     },
@@ -144,7 +144,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   let resp = await node.send({
     operation: {
-      type: IndyReq.type.NYM + '',
+      type: IndyReq.type.NYM,
       dest: my1DID,
       verkey: my1Verkey
     },
@@ -157,7 +157,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.GET_NYM + '',
+      type: IndyReq.type.GET_NYM,
       dest: my1DID
     },
     identifier: senderDID,
@@ -170,7 +170,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.ATTRIB + '',
+      type: IndyReq.type.ATTRIB,
       dest: my1DID,
       raw: '{"some":"one"}'
     },
@@ -182,7 +182,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.ATTRIB + '',
+      type: IndyReq.type.ATTRIB,
       dest: my1DID,
       raw: '{"another":"thing"}'
     },
@@ -194,7 +194,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.GET_ATTR + '',
+      type: IndyReq.type.GET_ATTR,
       dest: my1DID,
       raw: 'some'
     },
@@ -206,7 +206,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.GET_ATTR + '',
+      type: IndyReq.type.GET_ATTR,
       dest: my1DID,
       raw: 'another'
     },
@@ -218,7 +218,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.NYM + '',
+      type: IndyReq.type.NYM,
       dest: my1DID,
       verkey: my1Verkey
     },
@@ -228,7 +228,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.ATTRIB + '',
+      type: IndyReq.type.ATTRIB,
       dest: my1DID,
       raw: '{"some":"one"}'
     },
@@ -240,7 +240,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.ATTRIB + '',
+      type: IndyReq.type.ATTRIB,
       dest: my1DID,
       raw: '{"another":"thing"}'
     },
@@ -252,7 +252,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.GET_ATTR + '',
+      type: IndyReq.type.GET_ATTR,
       dest: my1DID,
       raw: 'some'
     },
@@ -264,7 +264,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
 
   resp = await node.send({
     operation: {
-      type: IndyReq.type.GET_ATTR + '',
+      type: IndyReq.type.GET_ATTR,
       dest: my1DID,
       raw: 'another'
     },
