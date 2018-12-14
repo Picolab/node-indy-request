@@ -111,7 +111,7 @@ function IndyReq (conf) {
 
     if (signKey) {
       let serialized = serializeForSignature(data, true)
-      data.signature = bs58.encode(nacl.sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64))
+      data.signature = bs58.encode(Buffer.from(nacl.sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
     }
 
     let p = new Promise(function (resolve, reject) {

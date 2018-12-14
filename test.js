@@ -138,9 +138,9 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
   let my1 = nacl.sign.keyPair.fromSeed(Buffer.from('00000000000000000000000000000My1', 'utf8'))
   let sender = nacl.sign.keyPair.fromSeed(Buffer.from('000000000000000000000000Trustee1', 'utf8'))
 
-  let my1DID = bs58.encode(my1.publicKey.slice(0, 16))
-  let my1Verkey = bs58.encode(my1.publicKey)
-  let senderDID = bs58.encode(sender.publicKey.slice(0, 16))
+  let my1DID = bs58.encode(Buffer.from(my1.publicKey.slice(0, 16)))
+  let my1Verkey = bs58.encode(Buffer.from(my1.publicKey))
+  let senderDID = bs58.encode(Buffer.from(sender.publicKey.slice(0, 16)))
 
   let resp = await node.send({
     operation: {
