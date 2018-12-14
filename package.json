@@ -1,6 +1,6 @@
 {
   "name": "indy-request",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Make requests to Indy (i.e. Sovrin) nodes",
   "main": "index.js",
   "repository": {
