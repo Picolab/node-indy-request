@@ -28,77 +28,89 @@ const role = {
 }
 
 function IndyReq (conf) {
-  if (typeof conf.timeout !== 'number') {
-    conf.timeout = 1000 * 60
-  }
-  let zsock = zmq.socket('dealer')
-
-  let keypair = zmq.zmqCurveKeypair()
-  zsock.identity = keypair.public
-  zsock.curve_publickey = keypair.public
-  zsock.curve_secretkey = keypair.secret
-  zsock.curve_serverkey = conf.serverKey
-  zsock.linger = 0 // TODO set correct timeout
-  zsock.connect('tcp://' + conf.host + ':' + conf.port)
-
   let nextReqId = 1
   let reqs = {}
-
   let api = new EventEmitter()
 
-  zsock.on('message', function (msg) {
-    try {
-      let str = msg.toString('utf8')
-      if (str === 'po') {
-        api.emit('pong')
-        return
+  const initZmqSocket = (async function () {
+    await sodium.ready
+    if (typeof conf.timeout !== 'number') {
+      conf.timeout = 1000 * 60
+    }
+    if (conf.genesisTxn) {
+      if (typeof conf.genesisTxn === 'string') {
+        conf.genesisTxn = JSON.parse(conf.genesisTxn)
       }
-      let data = JSON.parse(str)
-      let reqId, err
-      switch (data.op) {
-        case 'REQACK':
-          reqId = data.reqId
-          if (reqs[reqId]) {
-            reqs[reqId].ack = Date.now()
-          }
-          break
-        case 'REQNACK':
-        case 'REJECT':
-          reqId = data.reqId
-          err = new Error(data.reason)
-          err.data = data
-          if (reqs[reqId]) {
-            reqs[reqId].reject(err)
-          } else {
-            api.emit('error', err)
-          }
-          break
-        case 'REPLY':
-          if (data.result && data.result.txn && data.result.txn.metadata) {
-            reqId = data.result.txn.metadata.reqId
-          } else {
-            reqId = data.result.reqId
-          }
+      const dest = bs58.decode(conf.genesisTxn.txn.data.dest)
+      conf.serverKey = sodium.crypto_sign_ed25519_pk_to_curve25519(dest)
+      conf.host = conf.genesisTxn.txn.data.data.client_ip
+      conf.port = conf.genesisTxn.txn.data.data.client_port
+    }
+    let zsock = zmq.socket('dealer')
 
-          if (reqs[reqId]) {
-            reqs[reqId].resolve(data)
-            delete reqs[reqId]
-          } else {
-            let err = new Error('reqId not found: ' + reqId)
+    let keypair = zmq.zmqCurveKeypair()
+    zsock.identity = keypair.public
+    zsock.curve_publickey = keypair.public
+    zsock.curve_secretkey = keypair.secret
+    zsock.curve_serverkey = conf.serverKey
+    zsock.linger = 0 // TODO set correct timeout
+    zsock.connect('tcp://' + conf.host + ':' + conf.port)
+
+    zsock.on('message', function (msg) {
+      try {
+        let str = msg.toString('utf8')
+        if (str === 'po') {
+          api.emit('pong')
+          return
+        }
+        let data = JSON.parse(str)
+        let reqId, err
+        switch (data.op) {
+          case 'REQACK':
+            reqId = data.reqId
+            if (reqs[reqId]) {
+              reqs[reqId].ack = Date.now()
+            }
+            break
+          case 'REQNACK':
+          case 'REJECT':
+            reqId = data.reqId
+            err = new Error(data.reason)
+            err.data = data
+            if (reqs[reqId]) {
+              reqs[reqId].reject(err)
+            } else {
+              api.emit('error', err)
+            }
+            break
+          case 'REPLY':
+            if (data.result && data.result.txn && data.result.txn.metadata) {
+              reqId = data.result.txn.metadata.reqId
+            } else {
+              reqId = data.result.reqId
+            }
+
+            if (reqs[reqId]) {
+              reqs[reqId].resolve(data)
+              delete reqs[reqId]
+            } else {
+              let err = new Error('reqId not found: ' + reqId)
+              err.data = data
+              api.emit('error', err)
+            }
+            break
+          default:
+            err = new Error('op not handled: ' + data.op)
             err.data = data
             api.emit('error', err)
-          }
-          break
-        default:
-          err = new Error('op not handled: ' + data.op)
-          err.data = data
-          api.emit('error', err)
-      }
-    } catch (err) {
+        }
+      } catch (err) {
       // TODO try MsgPack
-      api.emit('error', err)
-    }
-  })
+        api.emit('error', err)
+      }
+    })
+    return zsock
+  }())
 
   let checkTimeouts = setInterval(function () {
     Object.keys(reqs).forEach(function (reqId) {
@@ -109,10 +121,13 @@ function IndyReq (conf) {
     })
   }, 1000)
 
-  api.ping = function ping () {
+  api.ping = async function ping () {
+    const zsock = await initZmqSocket
     zsock.send('pi')
   }
   api.send = async function send (data, signKey) {
+    const zsock = await initZmqSocket
+
     let reqId = nextReqId++
     data.reqId = reqId
 
@@ -134,9 +149,10 @@ function IndyReq (conf) {
     zsock.send(msg)
     return p
   }
-  api.close = function close () {
-    zsock.close()
+  api.close = async function close () {
     clearInterval(checkTimeouts)
+    const zsock = await initZmqSocket
+    zsock.close()
     Object.keys(reqs).forEach(function (reqId) {
       reqs[reqId].reject(new Error('Closed'))
       delete reqs[reqId]
