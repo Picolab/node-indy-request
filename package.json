@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "bs58": "^4.0.1",
-    "tweetnacl": "^1.0.0",
+    "tweetnacl": "^1.0.1",
     "zeromq": "^5.1.0"
   },
   "devDependencies": {

@@ -17,7 +17,7 @@ const type = {
   GET_ATTR: '104',
   GET_NYM: '105',
   GET_SCHEMA: '107',
-  GET_CLAIM_DEF: '108'
+  GET_CRED_DEF: '108'
 }
 
 const role = {

@@ -222,9 +222,9 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
       dest: my1DID,
       verkey: my1Verkey
     },
-    identifier: senderDID,
+    identifier: my1DID,
     protocolVersion: 2
-  }, sender.secretKey)
+  }, my1.secretKey)
 
   resp = await node.send({
     operation: {
