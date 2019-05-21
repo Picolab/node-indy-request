@@ -1,7 +1,7 @@
 let test = require('ava')
 let IndyReq = require('./')
 let bs58 = require('bs58')
-let nacl = require('tweetnacl')
+let sodium = require('libsodium-wrappers')
 let serializeForSignature = require('./serializeForSignature')
 
 let SERVERKEY = bs58.decode('HXrfcFWDjWusENBoXhV8mARzq51f1npWYWaA1GzfeMDG')
@@ -135,8 +135,9 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     node.close()
   })
 
-  let my1 = nacl.sign.keyPair.fromSeed(Buffer.from('00000000000000000000000000000My1', 'utf8'))
-  let sender = nacl.sign.keyPair.fromSeed(Buffer.from('000000000000000000000000Trustee1', 'utf8'))
+  await sodium.ready
+  let my1 = sodium.crypto_sign_seed_keypair(Buffer.from('00000000000000000000000000000My1', 'utf8'))
+  let sender = sodium.crypto_sign_seed_keypair(Buffer.from('000000000000000000000000Trustee1', 'utf8'))
 
   let my1DID = bs58.encode(Buffer.from(my1.publicKey.slice(0, 16)))
   let my1Verkey = bs58.encode(Buffer.from(my1.publicKey))
@@ -150,7 +151,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: senderDID,
     protocolVersion: 2
-  }, sender.secretKey)
+  }, sender.privateKey)
 
   t.is(resp.op, 'REPLY')
   t.is(resp.result.txn.data.verkey, my1Verkey)
@@ -176,7 +177,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.secretKey)
+  }, my1.privateKey)
 
   t.is(resp.result.txn.data.raw, '{"some":"one"}')
 
@@ -188,7 +189,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.secretKey)
+  }, my1.privateKey)
 
   t.is(resp.result.txn.data.raw, '{"another":"thing"}')
 
@@ -224,7 +225,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.secretKey)
+  }, my1.privateKey)
 
   resp = await node.send({
     operation: {
@@ -234,7 +235,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.secretKey)
+  }, my1.privateKey)
 
   t.is(resp.result.txn.data.raw, '{"some":"one"}')
 
@@ -246,7 +247,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.secretKey)
+  }, my1.privateKey)
 
   t.is(resp.result.txn.data.raw, '{"another":"thing"}')
 

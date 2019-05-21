@@ -1,5 +1,5 @@
 let bs58 = require('bs58')
-let nacl = require('tweetnacl')
+let sodium = require('libsodium-wrappers')
 let zmq = require('zeromq')
 let EventEmitter = require('events')
 let serializeForSignature = require('./serializeForSignature')
@@ -112,13 +112,14 @@ function IndyReq (conf) {
   api.ping = function ping () {
     zsock.send('pi')
   }
-  api.send = function send (data, signKey) {
+  api.send = async function send (data, signKey) {
     let reqId = nextReqId++
     data.reqId = reqId
 
     if (signKey) {
+      await sodium.ready
       let serialized = serializeForSignature(data, true)
-      data.signature = bs58.encode(Buffer.from(nacl.sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
+      data.signature = bs58.encode(Buffer.from(sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
     }
 
     let p = new Promise(function (resolve, reject) {
