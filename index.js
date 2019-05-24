@@ -27,6 +27,20 @@ const role = {
   ROLE_REMOVE: ''
 }
 
+const ledger = {
+    DOMAIN: 1//, TODO: get the name an value of other sub ledgers
+}
+
+async function addSignature(data, did, signKey) {
+    await sodium.ready
+    if (!("signatures" in data)) {
+        data.signatures = {}
+    }
+    let serialized = serializeForSignature(data, true)
+    data.signatures[did] = bs58.encode(Buffer.from(sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
+    return data
+}
+
 function IndyReq (conf) {
   let nextReqId = 1
   let reqs = {}
@@ -131,7 +145,7 @@ function IndyReq (conf) {
     let reqId = nextReqId++
     data.reqId = reqId
 
-    if (signKey) {
+    if (signKey && !("signatures" in data)) {
       await sodium.ready
       let serialized = serializeForSignature(data, true)
       data.signature = bs58.encode(Buffer.from(sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
@@ -165,3 +179,5 @@ function IndyReq (conf) {
 module.exports = IndyReq
 module.exports.type = type
 module.exports.role = role
+module.exports.ledger = ledger
+module.exports.addSignature = addSignature
