@@ -28,21 +28,28 @@ const role = {
 }
 
 const ledger = {
-    DOMAIN: 1//, TODO: get the name an value of other sub ledgers
+  POOL: 0,
+  DOMAIN: 1,
+  CONFIG: 2
 }
 
-async function addSignature(data, did, signKey) {
-    await sodium.ready
-    if (!("signatures" in data)) {
-        data.signatures = {}
-    }
-    let serialized = serializeForSignature(data, true)
-    data.signatures[did] = bs58.encode(Buffer.from(sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
-    return data
+async function addSignature (data, did, signKey) {
+  await sodium.ready
+  if (!('signatures' in data)) {
+    data.signatures = {}
+  }
+  let serialized = serializeForSignature(data, true)
+  data.signatures[did] = bs58.encode(Buffer.from(sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
+  return data
+}
+
+let _nextReqId = 1
+
+function nextReqId () {
+  return _nextReqId++
 }
 
 function IndyReq (conf) {
-  let nextReqId = 1
   let reqs = {}
   let api = new EventEmitter()
 
@@ -141,11 +148,17 @@ function IndyReq (conf) {
   }
   api.send = async function send (data, signKey) {
     const zsock = await initZmqSocket
-
-    let reqId = nextReqId++
-    data.reqId = reqId
-
-    if (signKey && !("signatures" in data)) {
+    let reqId
+    if (!('reqId' in data)) { // TODO: This will invalidate all signatures if the txn object has been signed before the reqId is added.
+      // txn's that require multiple signatures need to have reqId added before any signing.
+      // Some thought is needed on automatically adding reqId without checking if there is any signatures.
+      // Either way, adding reqId to a signed txn or sending txn without a reqId may result in a failure.
+      reqId = _nextReqId++
+      data.reqId = reqId
+    } else {
+      reqId = data.reqId
+    }
+    if (signKey && !('signatures' in data)) {
       await sodium.ready
       let serialized = serializeForSignature(data, true)
       data.signature = bs58.encode(Buffer.from(sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
@@ -181,3 +194,4 @@ module.exports.type = type
 module.exports.role = role
 module.exports.ledger = ledger
 module.exports.addSignature = addSignature
+module.exports.nextReqId = nextReqId
