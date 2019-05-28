@@ -3,7 +3,7 @@
  * Indy docker pools will need 2 additional trustees added before this example can be run.
  * */
 
-const IndyReq = require('indy-request')
+const IndyReq = require('../')
 const bs58 = require('bs58')
 const nacl = require('tweetnacl')
 const util = require('util')

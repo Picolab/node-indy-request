@@ -33,13 +33,18 @@ const ledger = {
   CONFIG: 2
 }
 
+function getSignature (data, signKey) {
+  let serialized = serializeForSignature(data)
+  let signature = sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)
+  return bs58.encode(Buffer.from(signature))
+}
+
 async function addSignature (data, did, signKey) {
   await sodium.ready
   if (!('signatures' in data)) {
     data.signatures = {}
   }
-  let serialized = serializeForSignature(data, true)
-  data.signatures[did] = bs58.encode(Buffer.from(sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
+  data.signatures[did] = getSignature(data, signKey)
   return data
 }
 
@@ -160,8 +165,7 @@ function IndyReq (conf) {
     }
     if (signKey && !('signatures' in data)) {
       await sodium.ready
-      let serialized = serializeForSignature(data, true)
-      data.signature = bs58.encode(Buffer.from(sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)))
+      data.signature = getSignature(data, signKey)
     }
 
     let p = new Promise(function (resolve, reject) {

@@ -1,4 +1,4 @@
-const IndyReq = require('indy-request')
+const IndyReq = require('../')
 const util = require('util')
 
 let DEFAULT_LIBINDY_DID = 'LibindyDid111111111111'

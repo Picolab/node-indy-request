@@ -1,4 +1,4 @@
-const IndyReq = require('indy-request')
+const IndyReq = require('../')
 const bs58 = require('bs58')
 const nacl = require('tweetnacl')
 const util = require('util')

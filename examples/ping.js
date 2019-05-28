@@ -1,4 +1,4 @@
-const IndyReq = require('./')
+const IndyReq = require('../')
 
 async function main () {
   const node = IndyReq({
