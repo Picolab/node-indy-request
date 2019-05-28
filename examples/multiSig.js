@@ -46,16 +46,17 @@ async function main () {
       role: IndyReq.role.TRUSTEE,
       verkey: my1Verkey
     },
-    reqId: IndyReq.nextReqId(),
     identifier: trustee1DID,
     protocolVersion: 2
   }
 
-  nymTxn = await IndyReq.addSignature(nymTxn, trustee1DID, trustee1.secretKey)
-  nymTxn = await IndyReq.addSignature(nymTxn, trustee2DID, trustee2.secretKey)
-  nymTxn = await IndyReq.addSignature(nymTxn, trustee3DID, trustee3.secretKey)
-
-  let resp = await dockerNode.send(nymTxn)
+  let resp = await dockerNode.send(nymTxn, {
+    signatures: {
+      [trustee1DID]: trustee1.secretKey,
+      [trustee2DID]: trustee2.secretKey,
+      [trustee3DID]: trustee3.secretKey
+    }
+  })
 
   console.log('NYM resp:')
   console.log(util.inspect(resp, false, null, true))

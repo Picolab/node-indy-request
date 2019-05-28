@@ -151,7 +151,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: senderDID,
     protocolVersion: 2
-  }, sender.privateKey)
+  }, { signature: sender.privateKey })
 
   t.is(resp.op, 'REPLY')
   t.is(resp.result.txn.data.verkey, my1Verkey)
@@ -177,7 +177,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.privateKey)
+  }, { signature: my1.privateKey })
 
   t.is(resp.result.txn.data.raw, '{"some":"one"}')
 
@@ -189,7 +189,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.privateKey)
+  }, { signature: my1.privateKey })
 
   t.is(resp.result.txn.data.raw, '{"another":"thing"}')
 
@@ -225,7 +225,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.privateKey)
+  }, { signature: my1.privateKey })
 
   resp = await node.send({
     operation: {
@@ -235,7 +235,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.privateKey)
+  }, { signature: my1.privateKey })
 
   t.is(resp.result.txn.data.raw, '{"some":"one"}')
 
@@ -247,7 +247,7 @@ test('NYM + GET_NYM + ATTRIB + GET_ATTR', async function (t) {
     },
     identifier: my1DID,
     protocolVersion: 2
-  }, my1.privateKey)
+  }, { signature: my1.privateKey })
 
   t.is(resp.result.txn.data.raw, '{"another":"thing"}')
 

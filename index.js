@@ -33,28 +33,13 @@ const ledger = {
   CONFIG: 2
 }
 
-function getSignature (data, signKey) {
-  let serialized = serializeForSignature(data)
+function sign (serialized, signKey) {
   let signature = sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)
   return bs58.encode(Buffer.from(signature))
 }
 
-async function addSignature (data, did, signKey) {
-  await sodium.ready
-  if (!('signatures' in data)) {
-    data.signatures = {}
-  }
-  data.signatures[did] = getSignature(data, signKey)
-  return data
-}
-
-let _nextReqId = 1
-
-function nextReqId () {
-  return _nextReqId++
-}
-
 function IndyReq (conf) {
+  let nextReqId = 1
   let reqs = {}
   let api = new EventEmitter()
 
@@ -151,21 +136,25 @@ function IndyReq (conf) {
     const zsock = await initZmqSocket
     zsock.send('pi')
   }
-  api.send = async function send (data, signKey) {
+
+  api.send = async function send (data, options = {}) {
     const zsock = await initZmqSocket
-    let reqId
-    if (!('reqId' in data)) { // TODO: This will invalidate all signatures if the txn object has been signed before the reqId is added.
-      // txn's that require multiple signatures need to have reqId added before any signing.
-      // Some thought is needed on automatically adding reqId without checking if there is any signatures.
-      // Either way, adding reqId to a signed txn or sending txn without a reqId may result in a failure.
-      reqId = _nextReqId++
-      data.reqId = reqId
-    } else {
-      reqId = data.reqId
-    }
-    if (signKey && !('signatures' in data)) {
-      await sodium.ready
-      data.signature = getSignature(data, signKey)
+
+    let reqId = nextReqId++
+    data.reqId = reqId
+
+    if (options.signature || options.signatures) {
+      let serialized = serializeForSignature(data)
+
+      if (options.signature) {
+        data.signature = sign(serialized, options.signature)
+      }
+      if (options.signatures) {
+        data.signatures = {}
+        for (const did of Object.keys(options.signatures)) {
+          data.signatures[did] = sign(serialized, options.signatures[did])
+        }
+      }
     }
 
     let p = new Promise(function (resolve, reject) {
@@ -197,5 +186,3 @@ module.exports = IndyReq
 module.exports.type = type
 module.exports.role = role
 module.exports.ledger = ledger
-module.exports.addSignature = addSignature
-module.exports.nextReqId = nextReqId
