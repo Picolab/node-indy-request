@@ -1,8 +1,8 @@
-let bs58 = require('bs58')
-let sodium = require('libsodium-wrappers')
-let zmq = require('zeromq')
-let EventEmitter = require('events')
-let serializeForSignature = require('./serializeForSignature')
+const bs58 = require('bs58')
+const sodium = require('libsodium-wrappers')
+const zmq = require('zeromq')
+const EventEmitter = require('events')
+const serializeForSignature = require('./serializeForSignature')
 
 const type = {
   NODE: '0',
@@ -34,14 +34,24 @@ const ledger = {
 }
 
 function sign (serialized, signKey) {
-  let signature = sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)
+  const signature = sodium.crypto_sign(Buffer.from(serialized, 'utf8'), signKey).slice(0, 64)
   return bs58.encode(Buffer.from(signature))
 }
 
+function addSignature (data, did, signKey) {
+  const serialized = serializeForSignature(data)
+
+  const newSignature = {}
+  newSignature[did] = sign(serialized, signKey)
+
+  return Object.assign({}, data, {
+    signatures: Object.assign({}, data.signatures || {}, newSignature)
+  })
+}
+
 function IndyReq (conf) {
-  let nextReqId = 1
-  let reqs = {}
-  let api = new EventEmitter()
+  const reqs = {}
+  const api = new EventEmitter()
 
   const initZmqSocket = (async function () {
     await sodium.ready
@@ -57,9 +67,9 @@ function IndyReq (conf) {
       conf.host = conf.genesisTxn.txn.data.data.client_ip
       conf.port = conf.genesisTxn.txn.data.data.client_port
     }
-    let zsock = zmq.socket('dealer')
+    const zsock = zmq.socket('dealer')
 
-    let keypair = zmq.zmqCurveKeypair()
+    const keypair = zmq.zmqCurveKeypair()
     zsock.identity = keypair.public
     zsock.curve_publickey = keypair.public
     zsock.curve_secretkey = keypair.secret
@@ -69,7 +79,7 @@ function IndyReq (conf) {
 
     zsock.on('message', function (msg) {
       try {
-        let str = msg.toString('utf8')
+        const str = msg.toString('utf8')
         if (str === 'po') {
           api.emit('pong')
           return
@@ -116,7 +126,7 @@ function IndyReq (conf) {
             api.emit('error', err)
         }
       } catch (err) {
-      // TODO try MsgPack
+        // TODO try MsgPack
         api.emit('error', err)
       }
     })
@@ -137,11 +147,19 @@ function IndyReq (conf) {
     zsock.send('pi')
   }
 
+  api.newReqId = (function () {
+    let id = 1
+    return function () {
+      return id++
+    }
+  }())
+
   api.send = async function send (data, options = {}) {
     const zsock = await initZmqSocket
 
-    let reqId = nextReqId++
-    data.reqId = reqId
+    if (!data.reqId) {
+      data.reqId = api.newReqId()
+    }
 
     if (options.signature || options.signatures) {
       let serialized = serializeForSignature(data)
@@ -150,7 +168,7 @@ function IndyReq (conf) {
         data.signature = sign(serialized, options.signature)
       }
       if (options.signatures) {
-        data.signatures = {}
+        data.signatures = data.signatures || {}
         for (const did of Object.keys(options.signatures)) {
           data.signatures[did] = sign(serialized, options.signatures[did])
         }
@@ -158,7 +176,7 @@ function IndyReq (conf) {
     }
 
     let p = new Promise(function (resolve, reject) {
-      reqs[reqId] = {
+      reqs[data.reqId] = {
         sent: Date.now(),
         ack: null,
         resolve: resolve,
@@ -186,3 +204,4 @@ module.exports = IndyReq
 module.exports.type = type
 module.exports.role = role
 module.exports.ledger = ledger
+module.exports.addSignature = addSignature
