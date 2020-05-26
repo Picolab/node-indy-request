@@ -2,7 +2,7 @@
 
 [![build status](https://secure.travis-ci.org/Picolab/node-indy-request.svg)](https://travis-ci.org/Picolab/node-indy-request)
 
-Make requests to Indy (i.e. Sovrin) nodes using node.js
+Make requests to Indy nodes using node.js
 
 ```js
 let IndyReq = require('indy-request')
